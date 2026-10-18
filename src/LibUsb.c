@@ -108,6 +108,90 @@ JNIEXPORT jint JNICALL METHOD_NAME(LibUsb, init)
 }
 
 /**
+ * int initContext(Context, int[], int[])
+ */
+JNIEXPORT jint JNICALL METHOD_NAME(LibUsb, initContext)
+(
+    JNIEnv *env, jclass class, jobject context, jintArray options,
+    jintArray values
+)
+{
+    struct libusb_init_option *opts = NULL;
+    int num = 0;
+    int result;
+    int i;
+
+    if ((options == NULL) != (values == NULL))
+    {
+        illegalArgument(env,
+            "options and values must both be set or both be null");
+        return 0;
+    }
+    if (options != NULL)
+    {
+        jsize nopt = (*env)->GetArrayLength(env, options);
+        jsize nval = (*env)->GetArrayLength(env, values);
+        if (nopt != nval)
+        {
+            illegalArgument(env, "options and values must have the same length");
+            return 0;
+        }
+        num = (int) nopt;
+    }
+    if (num > 0)
+    {
+        jint *op = (*env)->GetIntArrayElements(env, options, NULL);
+        jint *va = (*env)->GetIntArrayElements(env, values, NULL);
+        if (!op || !va)
+        {
+            if (op) (*env)->ReleaseIntArrayElements(env, options, op, JNI_ABORT);
+            if (va) (*env)->ReleaseIntArrayElements(env, values, va, JNI_ABORT);
+            return LIBUSB_ERROR_NO_MEM;
+        }
+        opts = malloc(sizeof(*opts) * (size_t) num);
+        if (!opts)
+        {
+            (*env)->ReleaseIntArrayElements(env, options, op, JNI_ABORT);
+            (*env)->ReleaseIntArrayElements(env, values, va, JNI_ABORT);
+            return LIBUSB_ERROR_NO_MEM;
+        }
+        for (i = 0; i < num; i++)
+        {
+            if (op[i] == LIBUSB_OPTION_LOG_CB)
+            {
+                free(opts);
+                (*env)->ReleaseIntArrayElements(env, options, op, JNI_ABORT);
+                (*env)->ReleaseIntArrayElements(env, values, va, JNI_ABORT);
+                illegalArgument(env,
+                    "OPTION_LOG_CB must be set with setLogCallback");
+                return 0;
+            }
+            opts[i].option = (enum libusb_option) op[i];
+            opts[i].value.ival = (int) va[i];
+        }
+        (*env)->ReleaseIntArrayElements(env, options, op, JNI_ABORT);
+        (*env)->ReleaseIntArrayElements(env, values, va, JNI_ABORT);
+    }
+
+    if (!context)
+    {
+        result = libusb_init_context(NULL, opts, num);
+        if (result == LIBUSB_SUCCESS) defaultContextRefcnt++;
+    }
+    else
+    {
+        libusb_context *ctx;
+
+        VALIDATE_POINTER_NOT_SET(env, context, "contextPointer",
+            free(opts); return 0);
+        result = libusb_init_context(&ctx, opts, num);
+        if (result == LIBUSB_SUCCESS) setContext(env, ctx, context);
+    }
+    free(opts);
+    return result;
+}
+
+/**
  * void exit(Context)
  */
 JNIEXPORT void JNICALL METHOD_NAME(LibUsb, exit)

@@ -15,7 +15,7 @@ rem ----------------------------------------------------------------------
 rem Setup variables
 rem ----------------------------------------------------------------------
 
-set LIBUSB_VERSION=1.0.28
+set LIBUSB_VERSION=1.0.30
 
 set CURRENT=%cd%
 set PROJECT_DIR=%~dp0..\..
@@ -49,7 +49,7 @@ curl -L -o "%LIBUSB_ARCHIVE%" https://github.com/libusb/libusb/archive/%LIBUSB_A
 cd "%LIBUSB_NAME%"
 mkdir build
 cd build
-cl /DHAVE_STRUCT_TIMESPEC /nologo /c /MT /I..\libusb /I..\msvc ..\libusb\*.c ..\libusb\os\windows*.c ..\libusb\os\*windows.c
+cl /DHAVE_STRUCT_TIMESPEC /DLIBUSB_WINDOWS_HOTPLUG /nologo /c /MT /I..\libusb /I..\msvc ..\libusb\core.c ..\libusb\descriptor.c ..\libusb\hotplug.c ..\libusb\io.c ..\libusb\strerror.c ..\libusb\sync.c ..\libusb\os\events_windows.c ..\libusb\os\threads_windows.c ..\libusb\os\windows_common.c ..\libusb\os\windows_hotplug.c ..\libusb\os\windows_usbdk.c ..\libusb\os\windows_winusb.c
 lib /nologo /out:libusb.lib *.obj
 
 

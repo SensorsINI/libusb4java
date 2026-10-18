@@ -1,0 +1,91 @@
+# Build the libusb 1.0.30 JNI jars. A green run means the library compiles,
+# links, and is packed at org/usb4java/<platform>/libusb4java.*. It does not
+# open a camera. jAER keeps these jars in its own jars/ folder; this workflow
+# only uploads them as artifacts.
+name: natives
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    name: linux-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86-64
+            qemu: ""
+          - arch: x86
+            qemu: ""
+          - arch: aarch64
+            qemu: /usr/bin/qemu-aarch64-static
+          - arch: arm
+            qemu: /usr/bin/qemu-arm-static
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable foreign-arch Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static binfmt-support
+      - name: Build
+        run: |
+          if [ -n "${{ matrix.qemu }}" ]; then
+            dists/linux/build "${{ matrix.arch }}" "${{ matrix.qemu }}"
+          else
+            dists/linux/build "${{ matrix.arch }}"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libusb4java-linux-${{ matrix.arch }}
+          path: target/libusb4java-linux-${{ matrix.arch }}.jar
+
+  windows:
+    name: win32-${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            folder: x86-64
+          - arch: x86
+            folder: x86
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build with the Visual Studio script
+        shell: cmd
+        run: |
+          set "PATH=C:\Program Files\7-Zip;%PATH%"
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath`) do set "VS=%%i"
+          call "%VS%\Common7\Tools\VsDevCmd.bat" -no_logo -host_arch=amd64 -arch=${{ matrix.arch }}
+          set "Platform=${{ matrix.arch }}"
+          call dists\win32\build.bat
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libusb4java-win32-${{ matrix.folder }}
+          path: target/libusb4java-win32-${{ matrix.folder }}.jar
+
+  macos:
+    name: darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build both architectures
+        run: |
+          brew install autoconf automake libtool cmake pkg-config
+          dists/darwin/build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libusb4java-darwin
+          path: target/libusb4java-darwin.jar

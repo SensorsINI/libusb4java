@@ -14,6 +14,7 @@ jclass jClassLibUsb = NULL;
 jmethodID jMethodTriggerPollfdAdded = NULL;
 jmethodID jMethodTriggerPollfdRemoved = NULL;
 jmethodID jMethodHotplugCallback = NULL;
+jmethodID jMethodLogCallback = NULL;
 
 jint illegalArgument(JNIEnv *env, const char *message, ...)
 {
@@ -78,6 +79,8 @@ jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
         "triggerPollfdRemoved", "(Ljava/io/FileDescriptor;J)V");
     jMethodHotplugCallback = (*env)->GetStaticMethodID(env, jClassLibUsb,
         "hotplugCallback", "(L"CLASS_PATH("Context;L")CLASS_PATH("Device;IJ)I"));
+    jMethodLogCallback = (*env)->GetStaticMethodID(env, jClassLibUsb,
+        "logCallback", "(L"CLASS_PATH("Context;") "ILjava/lang/String;)V");
 
     return JNI_VERSION_1_6;
 }

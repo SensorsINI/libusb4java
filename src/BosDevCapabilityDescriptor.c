@@ -10,7 +10,7 @@ jobject wrapBosDevCapabilityDescriptor(JNIEnv *env,
 {
     return wrapPointer(env, descriptor,
         CLASS_PATH("BosDevCapabilityDescriptor"),
-        "/bosDevCapabilityDescriptorPointer");
+        "bosDevCapabilityDescriptorPointer");
 }
 
 jobjectArray wrapBosDevCapabilityDescriptors(JNIEnv *env, int count,

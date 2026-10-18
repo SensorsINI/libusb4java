@@ -9,7 +9,7 @@ FROM $DOCKER_ARCH/debian:bookworm
 ARG OS_ARCH
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-$OS_ARCH
 
-ENV LIBUSB_VERSION=1.0.28
+ENV LIBUSB_VERSION=1.0.30
 ENV EUDEV_VERSION=3.2.14
 
 # Copy optional qemu binaries

@@ -134,6 +134,7 @@ extern jclass jClassLibUsb;
 extern jmethodID jMethodTriggerPollfdAdded;
 extern jmethodID jMethodTriggerPollfdRemoved;
 extern jmethodID jMethodHotplugCallback;
+extern jmethodID jMethodLogCallback;
 
 jobject wrapPointer(JNIEnv *env, const void *ptr, const char *className,
     const char *fieldName);
