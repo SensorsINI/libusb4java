@@ -48,7 +48,12 @@ build_architecture () {
   
     local ARCH_ID=$1
     local ARCH=$2
-    echo "Building for platform $OS-$ARCH"
+    # libusb enables darwin_usb.c only for a host matching *-darwin*.
+    # --host=x86_64 or --host=arm64 selects the null backend, which does not
+    # define usbi_get_monotonic_time / usbi_get_real_time. Apple clang still
+    # sets __APPLE__, so those clocks are not inlined either.
+    local HOST_TRIPLET=$3
+    echo "Building for platform $OS-$ARCH ($HOST_TRIPLET)"
     local BUILD_DIR="$TARGET_DIR/build/darwin-$ARCH"
     local ROOT_DIR="$BUILD_DIR/root"
 
@@ -68,7 +73,7 @@ build_architecture () {
 
     # Build libusb
     autoreconf -i
-    ./configure --disable-shared --enable-static --with-pic --prefix="$ROOT_DIR" --host=$ARCH
+    ./configure --disable-shared --enable-static --with-pic --prefix="$ROOT_DIR" --host="$HOST_TRIPLET"
     make install-strip
 
     # Build libusb4java
@@ -92,5 +97,5 @@ build_architecture () {
     fi
 }
 
-build_architecture x86-64 x86_64
-build_architecture aarch64 arm64
+build_architecture x86-64 x86_64 x86_64-apple-darwin
+build_architecture aarch64 arm64 aarch64-apple-darwin

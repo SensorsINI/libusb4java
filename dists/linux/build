@@ -24,31 +24,41 @@ OS=linux
 TARGET=target
 BUILD=$TARGET/build/$OS-$ARCH
 
-# Map specified architecture to a debian docker image architecture
+# Map specified architecture to a debian docker image architecture.
+# DOCKER_PLATFORM is passed to docker build and docker run. On an Intel
+# GitHub runner, linux/arm64 and linux/arm/v7 download the ARM image and
+# compile under qemu. Without it, Docker asks for an Intel copy of
+# arm64v8/debian and arm32v7/debian and the pull fails.
 case $ARCH in
     x86-64)
         DOCKER_ARCH=amd64
         OS_ARCH=amd64
+        DOCKER_PLATFORM=linux/amd64
         ;;
     x86)
         DOCKER_ARCH=i386
         OS_ARCH=i386
+        DOCKER_PLATFORM=linux/386
         ;;
     aarch64)
         DOCKER_ARCH=arm64v8
         OS_ARCH=arm64
+        DOCKER_PLATFORM=linux/arm64
         ;;
     arm)
         DOCKER_ARCH=arm32v7
         OS_ARCH=armhf
+        DOCKER_PLATFORM=linux/arm/v7
         ;;
     armel)
         DOCKER_ARCH=arm32v5
         OS_ARCH=armel
+        DOCKER_PLATFORM=linux/arm/v5
         ;;
     *)
         DOCKER_ARCH=$ARCH
         OS_ARCH=$ARCH
+        DOCKER_PLATFORM=
         ;;
 esac
 
@@ -65,7 +75,13 @@ else
 fi
 
 # Build docker image
+PLATFORM_ARGS=()
+if [ -n "$DOCKER_PLATFORM" ]
+then
+    PLATFORM_ARGS=(--platform "$DOCKER_PLATFORM")
+fi
 docker build . \
+    "${PLATFORM_ARGS[@]}" \
     --network host \
     -f dists/linux/Dockerfile \
     --build-arg ARCH=$ARCH \
@@ -75,6 +91,7 @@ docker build . \
 
 # Compile libusb4java in docker image
 docker run \
+    "${PLATFORM_ARGS[@]}" \
     -u $(id -u $USER):$(id -g $USER) \
     --network host \
     --rm \
